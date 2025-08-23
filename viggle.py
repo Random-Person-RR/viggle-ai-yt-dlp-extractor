@@ -128,6 +128,7 @@ class ViggleIE(InfoExtractor):
         processed_urls = set()
 
         # 3. Probe and add all found media URLs as formats
+        self.to_screen("Testing all formats")
         for key_path, media_url in url_list:
             if media_url in processed_urls:
                 continue
@@ -137,6 +138,8 @@ class ViggleIE(InfoExtractor):
             info = self._probe_with_ffprobe(media_url, ua)
             if not info or 'streams' not in info:
                 continue
+
+            quality = 0
 
             vcodec = acodec = 'none'
             width = height = None
@@ -149,8 +152,12 @@ class ViggleIE(InfoExtractor):
                 elif codec_type == 'audio':
                     acodec = s.get('codec_name') or acodec
 
-            quality = 1 if key_path == 'result' else 0
-            quality = 1 if key_path == 'template_processedHdURL' else 0
+            if key_path == 'result':
+             quality = 1
+            elif key_path == 'template_processedHdURL':
+             quality = 1
+            if key_path == 'video_url':
+             quality = 0
 
             # Use ffprobe's format_name (primary), with the special preference for mp4 when both audio+video
             ext = self._choose_extension_from_ffprobe(info, vcodec, acodec, media_url)
@@ -205,4 +212,5 @@ class ViggleIE(InfoExtractor):
             'description': data.get('description') or (data.get('rap') or {}).get('lyrics'),
             'duration': float_or_none(data.get('videoDuration')),
             'uploader': user_info.get('nickname'),
+            '_skip_check_formats': True
         }
